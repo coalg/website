@@ -2,9 +2,9 @@
 
 const CONFIG = {
   name: 'Read -> Code a',
-  github: 'http://www.github.com/algebroid',
+  github: 'http://www.github.com/coalg',
 
-  origin: 'https://read-io.dev',
+  origin: 'https://transitive.page.dev',
   basePathname: '/',
   trailingSlash: false,
 
