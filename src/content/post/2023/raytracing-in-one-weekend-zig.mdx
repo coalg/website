@@ -1,0 +1,28 @@
+---
+publishDate: 2023-01-31T00:00:00Z
+title: Zigによるレイトレーシング入門
+description: Zigによるレイトレーシング
+excerpt: Ray Tracing in One WeekendのZig実装解説
+category: programming
+icon: file-icons:pov-ray
+tags:
+  - zig
+  - graphics
+draft: true
+---
+
+import Info from '~/components/widgets/Info.astro';
+
+<Info>
+Peter Shirley: [Ray Tracing in One Weekend](https://raytracing.github.io/books/RayTracingInOneWeekend.html)のZig版です。
+原文は[CC0でライセンスされています](https://github.com/RayTracing/raytracing.github.io/blob/master/COPYING.txt)。本記事のライセンスについては、プログラムはMIT License、文章All rights reservedです。
+</Info>
+
+```sh
+❯ mkdir ray-tracing-in-one-weekend
+❯ cd ./ray-tracing-in-one-weekend
+❯ zig init-exe
+info: Created build.zig
+info: Created src/main.zig
+info: Next, try `zig build --help` or `zig build run`
+```

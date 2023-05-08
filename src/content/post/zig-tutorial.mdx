@@ -1,0 +1,1183 @@
+---
+publishDate: 2023-05-09T00:00:00Z
+title: Zig入門
+description: プログラミング言語Zigの入門記事
+excerpt: プログラミング言語Zigの言語仕様を一巡する
+category: programming
+icon: vscode-icons:file-type-zig
+tags:
+  - zig
+  - pl
+---
+
+import Info from '~/components/widgets/Info.astro';
+
+## 目次
+
+- [目次](#目次)
+- [Zigの特徴](#zigの特徴)
+- [インストール](#インストール)
+- [言語サーバ](#言語サーバ)
+- [動作確認](#動作確認)
+  - [Hello worldプログラムの構造](#hello-worldプログラムの構造)
+  - [デバッグprint](#デバッグprint)
+- [基本構文](#基本構文)
+  - [値割当て](#値割当て)
+  - [配列](#配列)
+  - [文字列リテラル](#文字列リテラル)
+    - [複数行文字列リテラル](#複数行文字列リテラル)
+  - [Optional型](#optional型)
+  - [ポインタ](#ポインタ)
+  - [多要素ポインタ](#多要素ポインタ)
+  - [スライス](#スライス)
+  - [制御構文](#制御構文)
+    - [`if`](#if)
+    - [`while`](#while)
+    - [`for`](#for)
+    - [`switch`](#switch)
+  - [関数](#関数)
+  - [`defer`](#defer)
+  - [エラー処理](#エラー処理)
+    - [`error`](#error)
+    - [エラーセットの型強制](#エラーセットの型強制)
+    - [グローバルエラーセット](#グローバルエラーセット)
+    - [エラーユニオン型](#エラーユニオン型)
+    - [`catch`](#catch)
+    - [`try`](#try)
+    - [`errdefer`](#errdefer)
+    - [関数から返されるエラーユニオンの推論](#関数から返されるエラーユニオンの推論)
+    - [エラーセットのマージ](#エラーセットのマージ)
+  - [列挙型](#列挙型)
+  - [構造体](#構造体)
+  - [ユニオン（共用体）](#ユニオン共用体)
+  - [ラベル](#ラベル)
+    - [ラベル付きブロック](#ラベル付きブロック)
+    - [ラベル付きループ](#ラベル付きループ)
+  - [`comptime`](#comptime)
+    - [`comptime` 指定が不要な式のリスト](#comptime-指定が不要な式のリスト)
+    - [`comptime var`](#comptime-var)
+    - [関数の引数に対する `comptime` 指定](#関数の引数に対する-comptime-指定)
+    - [組み込みの型情報取得関数](#組み込みの型情報取得関数)
+    - [`anytype`](#anytype)
+    - [`inline for`](#inline-for)
+    - [`inline while`](#inline-while)
+  - [匿名構造体](#匿名構造体)
+  - [番兵終端（sentinel termination）](#番兵終端sentinel-termination)
+  - [Vectors](#vectors)
+- [脚注](#脚注)
+
+
+## Zigの特徴
+
+Zigの特徴は以下の通り。
+
+- [文法仕様が簡素](https://ziglang.org/documentation/master/#Grammar)である一方、[言語仕様は多彩](https://ziglang.org/documentation/master/)
+- 生成されるプログラムが小さい
+- ポータブルである
+  - C言語に依存しない（[libc非依存](https://ziglang.org/ja/learn/overview/#zig%E3%81%AFc%E8%A8%80%E8%AA%9E%E3%81%AB%E4%BE%9D%E5%AD%98%E3%81%99%E3%82%8B%E3%81%AE%E3%81%A7%E3%81%AF%E3%81%AA%E3%81%8Fc%E8%A8%80%E8%AA%9E%E3%81%A8%E7%AB%B6%E4%BA%89%E3%81%99%E3%82%8B)）
+- C言語と競合可能な性能である
+    - 「[パフォーマンスについて言えば、ZigはCよりも速いです。](https://ziglang.org/ja/learn/overview/#%E6%80%A7%E8%83%BD%E3%81%A8%E5%AE%89%E5%85%A8%E6%80%A72%E3%81%A4%E3%81%AE%E9%81%B8%E6%8A%9E)」
+- C言語と相互運用可能
+- （後で埋める）
+
+## インストール
+
+[公式に記載](https://ziglang.org/ja/learn/getting-started/)の通り、ZigのバージョンアップはLLVMのリリースサイクルに連動しているため、6ヶ月周期となっている。現時点でZigはバージョン1.0に到達しておらず、変化の大きい言語であるため、リリース版を使うとキャッチアップが遅れがちになる。そのため、最新の機能変更に追従したいユーザーは、GitHubにホストされているnightly buildを利用することが推奨されている。
+
+インストール方法は[Getting Started](https://ziglang.org/ja/learn/getting-started/)を参照。各OS向けのパッケージマネージャからnightlyをインストールする方法も示されている。
+
+なお本稿では以下のビルドを利用する。
+
+```bash
+❯ zig version
+0.11.0-dev.3006+ff59c4584
+```
+
+## 言語サーバ
+
+Zigには[zls](https://github.com/zigtools/zls/)（zig言語サーバ）という非公式のツールが存在する（公式は管理していないが、有用であるため公式サイトからもリンクが張られている）。インストールすることにより、コード補完、定義ジャンプ、[その他](https://github.com/zigtools/zls/#features)の恩恵を受けることができる。なお、主要テキストエディタ向けにはzlsのプラグインないし拡張機能が[配布されている](https://install.zigtools.org/)。
+
+## 動作確認
+
+Hello worldを書いてみる。[^1]
+
+```rust
+const std = @import("std");
+
+pub fn main() !void {
+    const stdout = std.io.getStdOut().writer();
+    try stdout.print("Hello, {s}!", .{"world!"});
+}
+
+```
+
+ファイルを `hello.zig` で保存し、`zig run hello.zig` コマンドで実行する。
+
+```shell
+❯ zig run hello.zig
+Hello, World!
+```
+
+結果が得られた。
+
+実行可能バイナリを得るには以下のようにする。
+
+```shell
+❯ zig build-exe hello.zig
+❯ ./hello
+Hello, world!
+```
+
+では始めて行こう。
+
+### Hello worldプログラムの構造
+
+上で書いたHello worldを一行一行読んでいく。
+
+まず、最初の行で[標準ライブラリ](https://ziglang.org/documentation/master/#Zig-Standard-Library)の読み込みを行っている。
+
+```rust
+const std = @import("std");
+```
+
+`@import(...)`は、Zigに組み込まれた、ビルトイン関数呼び出しである。`@import("std")`は`std`ライブラリを読み込み、標準ライブラリを表現する値[^2]を返す。`const std =`によって、左辺の`std`にこの値を[定数識別子](https://ziglang.org/documentation/master/#Assignment)として[宣言](https://ziglang.org/documentation/master/#Container-Level-Variables)する。左辺で宣言した`std`から標準ライブラリの機能にアクセスできるようになる。
+
+注意点として、`@import`の左辺を`const`で宣言するのは必須である。これは、`@import(...)`がコンパイル時のみ処理されるためである。Zigは定数値をコンパイル時に評価する。[^3]
+
+続いて、`main` [public関数](https://ziglang.org/documentation/master/#Functions)を確認する。
+
+```rust
+pub fn main() !void {
+    ...
+}
+```
+
+`main`関数はZigの実行プログラムにとって宣言必須であり、特別扱いの関数である[^4]。Zigは`main`からプログラムを実行開始する。`pub`で関数を宣言すると、その関数は外部から利用可能になる。逆に、`pub`修飾子が付かない関数は非公開関数である。
+
+`!void` の部分は、関数の返り値の**型**を表す。`void`は関数が値を何も返さないことを表す。`void`の頭に`!`が付くことで、[エラーユニオン](https://ziglang.org/documentation/master/#Error-Union-Type)型であることを表している。`!void`は「何も返さない」または「エラー値を返す」ことを意味する。別の言葉で言い直すと、エラーユニオンは、エラーを表す[エラーセット型](https://ziglang.org/documentation/master/#Error-Set-Type)とその他任意のデータ型（プリミティブ型ないしユーザー定義型）を組み合わせたものである。
+
+エラーユニオンの完全な記述は、`[エラーセット型]![任意のデータ型]`という書き方をする。上の例では`!`の左側に何も書かれていない。この場合、コンパイラは[エラーセット型の推論](https://ziglang.org/documentation/master/#Inferred-Error-Sets)を行い、エラーセット型は推論された値になる。結論として、上の例 `!void` はエラーが起きていない場合（返り値`void`の場合）は値を返さず実行して欲しい、エラーが起きたら何か返せ、という気持ちを表現している。
+
+なお、Zigにおいて関数の返り値の型の記述は必須である。
+
+続いて、関数本体（ブロック文 `{ ... }`の内部）を確認する。
+
+```rust
+    const stdout = std.io.getStdOut().writer();
+    try stdout.print("Hello, {s}!", .{"world!"});
+```
+
+上の1行目で、まず標準出力への`writer`を初期化している。次の行で実際に `Hello, world!` を出力しようとしている。
+
+`stdout.print`は2つの引数を受け取る関数である。第1引数中の `{s}` はコンパイル時に第2引数の値で置き換えられる。第2引数の `.{ ... }` という書き方は、タプルと呼ばれる値である[^5]。
+
+標準出力は様々な理由で失敗する可能性があり、そのため `try` 式で`print`関数の結果を評価している。結果がエラーとなった場合、`try`式はエラーを返却する。正常に実行された場合、`main`は終了する。
+
+### デバッグprint
+
+現実的に、`stdout.print`が失敗する可能性はほとんどないため[^6]、デバッグをする時に `try` をいちいち書くのは煩雑である。`std.log`関数ないし`std.debug.print`関数を使うと、エラー処理を気にせずロギングすることができる。printデバッグをする時に使うのは`std.debug.print`である。これは入力を標準エラー出力（`stderr`）に出力し、出力が失敗した場合は黙ってエラーを握り潰す関数である。
+
+```rust
+const print = @import("std").debug.print;
+
+pub fn main() void {
+    print("Hello, world!\n", .{});
+}
+```
+
+`!void`が`void`となっている点に注意されたい。`std.debug.print`はエラーを返却しないため、エラーユニオンではなくなっている。
+
+## 基本構文
+
+本節ではZigの基本構文を足早に確認する。なお、コード例は説明したい部分だけを抜き出しているため、そのままではコンパイル不能である。参考文献は脚注を参照して頂きたい[^7] [^8] [^9]（特に[^8]に重点的に依拠。例は[^9]からも抜粋）。
+
+### 値割当て
+
+値割当ては以下の通り行う。キーワードの種類は、定数割当ての`const`, 変数割当て `var` の2種類である。
+
+```rust
+const x: i32 = -10; // signed integer: 整数型
+var   y: u32 = 10; // unsigned integer: 非負整数型
+
+x = 10; // エラー。const宣言した値は再割当て不能
+y = 20; // var宣言は再割当て可能
+y = -20; // エラー。非負整数u32のため
+```
+
+### 配列
+
+ある値が配列であることは、`[N]T`を記述することで示される。ここで`N`は配列の要素数、`T`は配列の型である。なお、配列をリテラルで記述する場合は、要素数`N`は`_`と記述すると推論可能である。
+
+```rust
+const xs = [5]u8{ 'h', 'e', 'l', 'l', 'o' };
+var   ys = [_]u8{ 'w', 'o', 'r', 'l', 'd' }; // [_] により要素数を推論可能
+
+// 配列の要素にはarray[i]という形でインデックスを指定してアクセス可能（0-origin）
+// 以下は配列の先頭要素に再割当てを試みている
+xs[0] = 'H'; // エラー。const宣言すると、配列そのものだけでなく、配列の要素も再割当て不能になる
+ys[0] = 'W'; // => { 'W', 'o', 'r', 'l', 'd' }
+
+// 要素数が推論されているため取得可能
+const len = ys.len; // => 5
+```
+
+配列に対して、コンパイル時（つまりスタック上のメモリ）に限り以下の演算を行うことができる。
+
+```rust
+// コンパイル時演算を行うため、constで宣言
+const hi = [_]u8{ 'H', 'i' };
+const xs = [_]u8{ 'H', 'e', 'l', 'l', 'o', ',' };
+const ys = [_]u8{ 'W', 'o', 'r', 'l', 'd', '!' };
+
+// 配列の繰り返し
+const ho = hi ** 3; // => { 'H', 'i', 'H', 'i', 'H', 'i', }
+// 配列の結合
+const zs = xs ++ ys; // { 'H', 'e', 'l', 'l', 'o', ',', 'W', 'o', 'r', 'l', 'd', '!' }
+```
+
+配列繰り返しの実用的な利用例は、配列をゼロ埋めで初期化する場合などである。
+
+### 文字列リテラル
+
+大雑把な説明をすると、Zigの文字列リテラルは基本的に`u8`の配列である（UTF-8）。文字列は不変であるため、`[_]const u8`のような型をしている。
+
+```rust
+// 文字列
+const foo = "Hello";
+// は、以下の宣言と（大雑把には）同じ
+const foo = [_]u8{ 'H', 'e', 'l', 'l', 'o' };
+```
+
+<Info>
+厳密には、Zigの文字列は`u8`番兵付き配列への多要素ポインタ（`*const [N:0]u8`）である。番兵（`[N:0]`の`0`の部分）とは、配列の終端を示す特別な要素であり、ヌル文字（値が0の要素）である。Zigの文字列終端に番兵が存在する理由は、C言語との相互運用性のためである。多要素ポインタについては後述する。
+</Info>
+
+#### 複数行文字列リテラル
+
+複数行にまたがる文字列リテラルは、文字列の先頭に`\\`を使い以下のように宣言できる
+
+```rust
+const lyrics =
+    \\Ziggy played guitar
+    \\Jamming good with Andrew Kelley
+    \\And the Spiders from Mars
+;
+```
+
+### Optional型
+
+Zigにはoptional型が組み込まれている。`?T` という型で表され、`null`ないし`T`型の値が入る。
+
+```rust
+const x: ?i32 = 42;   // => optional(42)
+const y: ?i32 = null; // => optional(null)
+```
+
+optionalから値を取り出すには `orelse` 文を使い以下のようにする。
+
+```rust
+const x2: ?i32 = x orelse 0; // => 42
+const y2: ?i32 = y orelse 0; // => 0
+```
+
+optionalの中の値が `null` でないという絶対的な自信がある場合、以下のように短く書ける。
+
+```rust
+const x2: ?i32 = x.?; // => 42
+```
+
+この構文は、optionalに値が入っている場合取り出し、`null`の場合は未定義動作を引き起こすため、理解せずに用いると危険なコードである[^10]。
+
+これは以下の `orelse` 構文と同じである。
+
+```rust
+const x2: ?i32 = x orelse unreachable; // => 42
+```
+
+`unreachable` は文字通り「到達不能」を表すキーワードである。Zigコンパイラは、非セーフモードでは `unreachable` に到達しない前提で最適化を行う。ここに実行が到達する可能性が残されている場合、どのような誤動作が起こるかはプログラマにも一切不明となる。
+
+次節で説明するように、Zigでは制御構文中にoptionalを捕捉するための構文（ペイロード・キャプチャリング）が存在する。
+
+### ポインタ
+
+ポインタの型は `*T` である。型から分かるように、ポインタは0ないし`null`を値として許容しない。
+
+値が `x` の時、参照は `&x`、逆参照（デリファレンス）は `*x` で行う。
+
+以下はziglearn.orgの例である。
+
+```rust
+fn increment(num: *u8) void {
+    num.* += 1;
+}
+
+test "pointers" {
+    var x: u8 = 1;
+    increment(&x);
+    try expect(x == 2);
+}
+```
+
+`*T`に0を代入しようとすると、コンパイラは不適格な動作 (illegal behaviour) を検出する。
+
+```rust
+test "naughty pointer" {
+    var x: u16 = 0;
+    var y: *u8 = @intToPtr(*u8, x);
+    _ = y;
+}
+```
+
+```rust
+test "naughty pointer"...cast causes pointer to be null
+.\tests.zig:241:18: 0x7ff69ebb22bd in test "naughty pointer" (test.obj)
+    var y: *u8 = @intToPtr(*u8, x);
+                 ^
+```
+
+ ポインタには不変ポインタ (`*const T`, const pointer) と可変ポインタ `*T` が存在する。不変ポインタの参照データは変更することができない。
+
+### 多要素ポインタ
+
+多要素ポインタは要素数が不明なデータへのポインタを表現する。型は `[*]T` である。このポインタからは要素数の情報が得られないため、要素数を管理するのはプログラマの責任となる。多要素ポインタに対しては、インデックスの指定による要素取得、ポインタ演算、スライスの取得ができる（スライスについては次節）。普通のポインタ`*T`と違って、サイズが不明な型を指すことはできない。
+
+多要素ポインタが指す要素数は0以上であれば何でもよい（0も含む）。
+
+### スライス
+
+スライスは要素数の判明している多要素ポインタと考えることができる（データへのポインタ`[*]T`とサイズ`usize`のペア）。実際の型は `[]T` と書く。
+
+スライスはZigにおいて多用されるが、特に文字列リテラルは`[]const u8`に型強制されるスライスである。
+
+`x[n..m]`は配列からスライスを作成する構文であり、この操作はスライシングと呼ばれる。左記のスライシングは配列 `x` について、`x[n]`から開始して`x[m-1]`で終了するスライスを作成する。
+
+```rust
+fn total(values: []const u8) usize {
+    var sum: usize = 0;
+    for (values) |v| sum += v;
+    return sum;
+}
+test "slices" {
+    const array = [_]u8{ 1, 2, 3, 4, 5 };
+    const slice = array[0..3];
+    try expect(total(slice) == 6);
+}
+```
+
+### 制御構文
+
+Zigの制御構文には `if`, `while`, `for`, `switch` が存在する。それぞれ構文はC言語に似通っているため、C言語と異なる点を中心に説明する。
+
+#### `if`
+
+Zigの`if`は文として使うこともできるが、式を返すことができる。また、条件部はbool型の値のみを受け付け、それ以外はエラーとなる。
+
+```rust
+// ifは普通の文のように使える
+var foo = 1;
+if (foo == 1) {
+    std.debug.print("Foo is 1!\n", .{});
+} else {
+    std.debug.print("Foo is not 1!\n", .{});
+}
+
+// 式としても使える
+var discount = true;
+var price: u8 = if (discount) 17 else 20; // => price == 17
+```
+
+以下の構文でoptionalを捕捉できる。これはペイロード・キャプチャリングの一種である。
+
+```rust
+const a: ?u32 = 0;
+// valueは不変値であるため変更できない
+if (a) |value| {
+    try expect(value == 0);
+} else {
+    unreachable;
+}
+
+// ポインタでキャプチャすれば値を変更可能
+var c: ?u32 = 3;
+if (c) |*value| {
+    value.* = 2;
+}
+```
+
+なお、論理演算子は論理和`a or b`、論理積`a and b`、否定`!a`、等価 `a == b` である。
+
+#### `while`
+
+`while`は文または式として使うことができる。`while`の構文は `while (条件式):(継続式) { 処理ブロック }`である（ここで継続式は省略可能）。
+
+以下は継続式を含む例である。
+
+```rust
+test "while with continue expression" {
+    var sum: u8 = 0;
+    var i: u8 = 1;
+    while (i <= 10) : (i += 1) {
+        sum += i;
+    }
+    try expect(sum == 55);
+}
+```
+
+処理ブロック中では`continue`と`break`を利用可能である。
+
+また、ペイロードキャプチャリング `| ... |` を用いつつoptional型を継続条件にすることができる。
+
+```rust
+var numbers_left: u32 = 4;
+fn eventuallyNullSequence() ?u32 {
+    if (numbers_left == 0) return null;
+    numbers_left -= 1;
+    return numbers_left;
+}
+
+test "while null capture" {
+    var sum: u32 = 0;
+    // 条件式がnullの場合ブロックを抜ける
+    // 値がある場合はvalueにキャプチャする
+    while (eventuallyNullSequence()) |value| {
+        sum += value;
+    }
+    try expect(sum == 6); // 3 + 2 + 1
+}
+```
+
+#### `for`
+
+`for`は文または式として使うことができる。forは基本的に配列に対して実行可能である。
+
+構文は `for (配列) |要素, インデックス| { 処理ブロック }`である。インデックスは省略可能である。
+
+```rust
+const hello = [_]u8{'H', 'e', 'l', 'l', 'o', ',', 'Z', 'i', 'g', '!'};
+
+for (hello) |char| {
+    std.debug.print("{c}", .{char}); // => Hello,Zig!
+}
+```
+
+#### `switch`
+
+`switch`は文または式として使うことができる。基本的なパターンマッチが可能で、値の網羅性チェックとキャプチャができる[^11]。HaskellやRustなどにある、ガード節は存在しない。また、C言語にあるようなフォールスルーはないため、分岐後の`break`文は不要である。
+
+```rust
+// 式バージョンのみを掲載する
+const lang_chars = [_]u8{ 26, 9, 7, 42 };
+
+for (lang_chars) |c| {
+    var real_char: u8 = switch (c) {
+        7 => 'G',
+        9 => 'I',
+        26 => 'Z',
+        else => '!', // else節はワイルドカードである
+    };
+
+    std.debug.print("{c}", .{real_char});
+} // => ZIG!
+```
+
+### 関数
+
+Zigの関数はプリミティブ型の引数について値渡しである。すなわち呼び出し時は値のコピーを渡す。構造体ないし共用体を渡す場合は、値渡しと参照渡しのどちらが速いかをZigコンパイラが自動的に判断する。これは、関数の引数が必ずイミュータブルであるためできることである。
+
+```rust
+fn addNumber(x: u32, y: u32) u32 {
+    return x + y;
+}
+```
+
+### `defer`
+
+`defer`を頭に付けた文は、そのブロック内で最後に実行される。これは例えばファイルのopen/closeのように、リソースの確保とクリーンナップをまとめて書きたい時に有用である。
+
+以下は[Stack Overflowからのファイル読み出し例である](https://stackoverflow.com/questions/68368122/how-to-read-a-file-in-zig)。
+
+```rust
+{
+    var file = try std.fs.cwd().openFile("foo.txt", .{});
+    defer file.close(); // この行はブロック内で最後に実行される
+
+    var buf_reader = std.io.bufferedReader(file.reader());
+    var in_stream = buf_reader.reader();
+
+    var buf: [1024]u8 = undefined;
+    while (try in_stream.readUntilDelimiterOrEof(&buf, '\n')) |line| {
+        // ファイルの各行についてなにかする
+    }
+} // <= ここで `file.close()` が実行される
+```
+
+### エラー処理
+
+#### `error`
+
+`error`キーワードでエラーセット型を定義できる。エラーセット型はエラーの種類を表現するenumのようなものである。Zigには例外機構は存在せず、すべてのエラーはエラーセット型で定義された値として存在する。
+
+```rust
+const FileOpenError = error {
+    AccessDenied,
+    OutOfMemory,
+    FileNotFound,
+};
+
+const AllocationError = error {
+    OutOfMemory,
+};
+
+// エラー値が１つの場合、以下のショートカットで即時利用が可能
+const err = error.OutOfMemory;
+// これは以下と同等
+const err = (error {OutOfMemory}).OutOfMemory;
+```
+
+#### エラーセットの型強制
+
+エラーセットは、サブセットとなるエラーセットからスーパーセットへの型強制ができる。
+
+#### グローバルエラーセット
+
+`anyerror`にはコンパイルユニット全体のすべてのエラーセットが含まれる。`anyerror`を使うとどんなエラーセットに含まれるエラーか分からないため、利用は推奨されない。
+
+#### エラーユニオン型
+
+「動作確認」の節で確認したように、普通のデータ型とエラーセット型の複合型を宣言するための構文が存在する。
+
+構文を再掲すると`[エラーセット型]![任意のデータ型]`となる。
+
+#### `catch`
+
+エラーユニオン型は`catch`で捕捉することができる。以下は `maybe_error` から値を取り出すとき、`AllocationError` 型のエラーが入っていた場合、フォールバックして0を代入する例である。
+
+```rust
+test "error union" {
+    const maybe_error: AllocationError!u16 = 10;
+    const no_error = maybe_error catch 0;
+
+    try expect(@TypeOf(no_error) == u16);
+    try expect(no_error == 10);
+}
+```
+
+`catch`節の後ろに続けて `|err| { ... }` のように書き、ペイロードキャプチャリングすることができる。つまり`err`にはエラー値を捕捉している。
+
+以下はziglearn.orgの例である。
+
+```rust
+fn failingFunction() error{Oops}!void {
+    return error.Oops;
+}
+
+test "returning an error" {
+    failingFunction() catch |err| {
+        expect(err == error.Oops) catch |err| return err;
+        return;
+    };
+}
+```
+
+#### `try`
+
+`try x`は`x catch |err| return err`のショートカットである。`try`を使うと1つ前の例は以下のように書き換えられる。
+
+```rust
+test "returning an error" {
+    failingFunction() catch |err| {
+        try expect(err == error.Oops);
+        return;
+    };
+}
+```
+
+ここまでで分かるように、Zigの `try`, `catch` はJavaやC#などにおける同キーワードとはかけ離れた意味を持っている。
+
+#### `errdefer`
+
+`errdefer`は`defer`と似通っているが、`errdefer`の存在するブロック中で、ブロックを抜けてエラー値をreturnするコードに到達した場合に実行される。
+
+```rust
+var problems: u32 = 98;
+
+fn failFnCounter() error{Oops}!void {
+    errdefer problems += 1;
+    try failingFunction();
+}
+
+test "errdefer" {
+    failFnCounter() catch |err| {
+        try expect(err == error.Oops);
+        try expect(problems == 99);
+        return;
+    };
+}
+```
+
+#### 関数から返されるエラーユニオンの推論
+
+関数については、`!T`のようにエラーセットの型を省略して記述することで、コンパイラにエラーセットを推論させる事ができる。推論結果は、関数が返す可能性があるすべてのエラーを含むエラーセットになる。
+
+```rust
+fn createFile() !void {
+    return error.AccessDenied;
+}
+
+test "inferred error set" {
+    // エラーセット推論によって型強制が成功する
+    const x: error{AccessDenied}!void = createFile();
+}
+```
+
+#### エラーセットのマージ
+
+エラーセットは `||` でマージできる。
+
+```rust
+const A = error { NotDir, PathNotFound };
+const B = error { OutOfMemory, PathNotFound };
+const C = A || B;
+```
+
+### 列挙型
+
+Zigにおける列挙型はキーワード `enum` で以下のように定義する。
+
+```rust
+const Direction = enum { north, south, east, west };
+```
+
+列挙型を順序付けしたい場合、整数型で指定したタグ型を持たせることができる。
+
+```rust
+const Value = enum(u2) { zero, one, two };
+```
+
+この列挙型の値は`0,1,2,...`という形で増加する。実際の値は `@enumToInt`で取得できる。
+
+```rust
+test "enum ordinal value" {
+    try expect(@enumToInt(Value.zero) == 0);
+    try expect(@enumToInt(Value.one) == 1);
+    try expect(@enumToInt(Value.two) == 2);
+}
+```
+
+値は上書きすることもできる。
+
+```rust
+const Value2 = enum(u32) {
+    hundred = 100,
+    thousand = 1000,
+    million = 1000000,
+    next,
+};
+
+test "set enum ordinal value" {
+    try expect(@enumToInt(Value2.hundred) == 100);
+    try expect(@enumToInt(Value2.thousand) == 1000);
+    try expect(@enumToInt(Value2.million) == 1000000);
+    try expect(@enumToInt(Value2.next) == 1000001);
+}
+```
+
+`enum`にはメソッドを持たせることもできる（例は省略）。
+
+### 構造体
+
+構造体はZigの複合データ型の中で最もよく使われるデータ型である。Zigは構造体中のフィールドについて、メモリ上のレイアウトやサイズを何ら保証しない。
+
+宣言した構造体の確保は型 `T` として `T{}` という構文で行う。
+
+```rust
+const Vec3 = struct {
+    x: f32, y: f32, z: f32
+};
+
+test "struct usage" {
+    const my_vector = Vec3 {
+        .x = 0,
+        .y = 100,
+        .z = 50,
+    };
+    _ = my_vector;
+}
+```
+
+値の構築時はすべてのフィールドを埋める必要がある。ただし、定義にデフォルト値を設定することもできる。
+
+```rust
+const Vec4 = struct {
+    x: f32, y: f32, z: f32 = 0, w: f32 = undefined
+};
+
+test "struct defaults" {
+    const my_vector = Vec4 {
+        .x = 25,
+        .y = -50,
+    };
+    _ = my_vector;
+}
+```
+
+構造体にはメソッドを定義できる。
+
+```rust
+const std = @import("std");
+const pow = std.math.pow;
+const sqrt = std.math.sqrt;
+
+const Vec3 = struct {
+    x: f32, y: f32, z: f32,
+
+    // 第1引数は自分自身を受け取る（変数名は慣習的にself）
+    fn norm (self: Vec3) f32 {
+        return sqrt(pow(f32, self.x, 2.0) + pow(f32, self.y, 2.0) + pow(f32, self.z, 2.0));
+    }
+};
+```
+
+### ユニオン（共用体）
+
+Zigの共用体のメモリレイアウトは保証されない。共用体のフィールドは1つだけ有効になる。不活性なフィールドにアクセスしようとするとコンパイラは不適格な動作を検出する。
+
+共用体は `union` キーワードを使って以下のように定義できる。以下は不適格な動作を検出する例である。
+
+```rust
+const Result = union {
+    int: i64,
+    float: f64,
+    bool: bool,
+};
+
+test "simple union" {
+    var result = Result{ .int = 1234 };
+    result.float = 12.34;
+}
+```
+
+```rust
+test "simple union"...access of inactive union field
+.\tests.zig:342:12: 0x7ff62c89244a in test "simple union" (test.obj)
+    result.float = 12.34;
+           ^
+```
+
+タグ付き共用体（Tagged union）は、`enum`を用いてどのフィールドが有効になっているかを調べることができる共用体である。
+
+`switch` 文でタグ付き共用体を振り分け、ペイロードキャプチャリング`|...|`で値を捕捉することができる。キャプチャした値は常にイミュータブルだが、以下の例のように、ポインタ捕捉 `|*...|` を行いデリファレンスした値を変更することができる。
+
+```rust
+const Tag = enum { a, b, c };
+
+const Tagged = union(Tag) { a: u8, b: f32, c: bool };
+
+test "switch on tagged union" {
+    var value = Tagged{ .b = 1.5 };
+    switch (value) {
+        .a => |*byte| byte.* += 1,
+        .b => |*float| float.* *= 2,
+        .c => |*b| b.* = !b.*,
+    }
+    try expect(value.b == 3);
+}
+```
+
+タグ付き共用体のタグ型は推論させることができる。上記の例は以下のようにすることで `const Tag = ...` の定義を省略できる。
+
+```rust
+const Tagged = union(enum) { a: u8, b: f32, c: bool };
+```
+
+### ラベル
+
+#### ラベル付きブロック
+
+Zigのブロックにはラベルを与えることができる。また、ブロックは値を返すことができる。`break`に返す値を記述することでブロックの返値を表現できる。
+
+```rust
+test "labelled blocks" {
+    const count = blk: {
+        var sum: u32 = 0;
+        var i: u32 = 0;
+        while (i < 10) : (i += 1) sum += i;
+        break :blk sum;
+    };
+    try expect(count == 45);
+    try expect(@TypeOf(count) == u32);
+}
+```
+
+#### ラベル付きループ
+
+`for`, `while`ループもラベル付きループにすることができる。`break`と`continue`に使える。
+
+これは特に2重ループで内部ループから外部ループに脱出したい場合に使う。
+
+```rust
+test "nested continue" {
+    var count: usize = 0;
+    outer: for ([_]i32{ 1, 2, 3, 4, 5, 6, 7, 8 }) |_| {
+        for ([_]i32{ 1, 2, 3, 4, 5 }) |_| {
+            count += 1;
+            continue :outer; // outer forの次の要素から処理を継続
+        }
+    }
+    try expect(count == 8);
+}
+```
+
+### `comptime`
+
+Zigにおいて、コンパイル時に計算される値は `comptime` キーワードで明示的に指定できる。
+
+ただし、そもそも`comptime`を指定しなくてもコンパイル時に計算される値があるため、注意が必要である。
+
+#### `comptime` 指定が不要な式のリスト
+
+| 名称                                 | 説明                                                                                             |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| 数値リテラルが代入された`const`変数                       | 整数リテラルは`comptime_int`型、小数リテラルは`comptime_float`型を持つ。コンパイル時、コード中に値として挿入される                       |
+| グローバルスコープの変数             | ソースファイル内部のトップレベル関数の外側で定義されている変数                                   |
+| 型宣言（`type`型の値）               | 右記の型宣言が該当する。変数、関数（パラメータの型と返却値の型）、構造体、共用体、列挙体。                                 |
+| inline for, inline while中のテスト式 | -                                                                                                |
+| `@cImport()`に渡される式             | C言語ファイルのインポートを行うビルトイン関数                                                    |
+
+#### `comptime var`
+
+Zigではvar変数を`comptime`宣言できる。このように宣言するとコンパイル時に代入変更が可能になる。
+
+```rust
+comptime var count = 0;
+
+count += 1;
+var a1: [count]u8 = .{'A'} ** count;
+
+count += 1;
+var a2: [count]u8 = .{'B'} ** count;
+
+count += 1;
+var a3: [count]u8 = .{'C'} ** count;
+
+count += 1;
+var a4: [count]u8 = .{'D'} ** count;
+
+print("{s} {s} {s} {s}\n", .{ a1, a2, a3, a4 });
+@compileLog("Count at compile time: ", count);
+// => コンパイル時に Count at compile time: 4 とコンパイルエラーが出力される
+```
+
+`@compileLog`はコンパイル時に実行可能な `print` 関数のようなものである。`@compileLog`はあくまでデバッグ用途であり、呼び出し時はコンパイルエラーとして扱われるため、プログラムリリース時は呼び出しを削除する必要がある。
+
+#### 関数の引数に対する `comptime` 指定
+
+`comptime`を活用している代表例は `std.debug.print()` 関数である。シグネチャは以下の通りである。
+
+```rust
+fn print(comptime fmt: []const u8, args: anytype) void
+```
+
+第1引数の `fmt` が `comptime` に評価されることが分かる。実際、Zigはコンパイル時にフォーマット文字列のエラーを検出する（内部的には `std.fmt.format()` でコンパイル時にエラーを検出している）。
+
+また、Zigでは型も `type` 型の値であるため、関数に対して型を表す引数を渡すことができる。これを `comptime` と組み合わせると、ジェネリクスを実現できる。
+
+```rust
+const print = @import("std").debug.print;
+
+pub fn main() void {
+    // Zigはコンパイル時に、型Tとsize毎にmakeSequenceの関数のコピーを作り出す
+    // 以下の呼び出しにより特定の型、特定のデータサイズを処理する3つの関数宣言が生まれている
+    const s1 = makeSequence(u8, 3); // creates a [3]u8
+    const s2 = makeSequence(u32, 5); // creates a [5]u32
+    const s3 = makeSequence(i64, 7); // creates a [7]i64
+
+    print("s1={any}, s2={any}, s3={any}\n", .{ s1, s2, s3 });
+    // => s1={ 1, 2, 3 }, s2={ 1, 2, 3, 4, 5 }, s3={ 1, 2, 3, 4, 5, 6, 7 }
+}
+
+fn makeSequence(comptime T: type, comptime size: usize) [size]T {
+    var sequence: [size]T = undefined;
+    var i: usize = 0;
+
+    while (i < size) : (i += 1) {
+        sequence[i] = @intCast(T, i) + 1;
+    }
+
+    return sequence;
+}
+```
+
+#### 組み込みの型情報取得関数
+
+以下に、型の情報を取得するために使えるビルトイン関数をいくつか示す。
+
+- `@TypeOf(...) type`
+  - 任意の値を受け取り型を返す。。
+- `@typeInfo(comptime T: type) std.builtin.Type`
+  - `type` 型の値を受け取り、タグ付き共用体を返す。
+  - [std.builtin.Typeの型](https://github.com/ziglang/zig/blob/0.10.x/lib/std/builtin.zig#L192)
+- `@Type(comptime info: std.builtin.Type) type`
+  - これは`@typeInfo`の逆変換を行うである。タグ付き共用体を受け取り `type` 型の値を返す。
+- `@typeName(T: type) *const [N:0]u8`
+  - `type` 型の値を受け取り、型名の文字列を返す。
+- `@hasDecl(comptime Container: type, comptime name: []const u8) bool`
+  - 第1引数に構造体ないしenumまたはunion型 [^12]、第2引数に関数名を受け取り、構造体に関数が存在するか否かを `bool` 値で返す。
+- `@hasField(comptime Container: type, comptime name: []const u8) bool`
+  - 第1引数に構造体ないしenumまたはunion型、第2引数にフィールド名を受け取り、構造体にフィールドが存在するか否かを `bool` 値で返す。
+
+詳細は公式の[ビルトイン関数](https://ziglang.org/documentation/master/#Builtin-Functions)を参照。
+
+#### `anytype`
+
+関数の引数の型宣言において、型の代わりに`anytype`を宣言できる。`anytype`を使うと関数が呼び出された時点で型が推測される。
+
+以下の例では、`@TypeOf`を用いて呼び出し時の型で計算結果を返す関数を実装している。
+
+```rust
+fn plusOne(x: anytype) @TypeOf(x) {
+    return x + 1;
+}
+
+test "inferred function parameter" {
+    try expect(plusOne(@as(u32, 1)) == 2);
+}
+```
+
+#### `inline for`
+
+`inline for`はコンパイル時に繰り返し計算を行わせるための構文である。
+
+以下は`@typeInfo`によるリフレクションを利用し、`inline for`中で`Narcissus`構造体のフィールド一覧を表示する例である。
+
+```rust {highlight: '2..3'}
+const print = @import("std").debug.print;
+
+const Narcissus = struct {
+    me: *Narcissus = undefined,
+    myself: *Narcissus = undefined,
+    echo: void = undefined,
+};
+
+pub fn main() void {
+    print("Narcissus has room in his heart for:", .{});
+
+    const fields = @typeInfo(Narcissus).Struct.fields;
+
+    inline for (fields) |field| {
+        if (field.field_type != void) {
+            print(" {s}", .{field.name});
+        }
+    }
+
+    print(".\n", .{});
+
+    // => Narcissus has room in his heart for: me myself.
+}
+```
+
+#### `inline while`
+
+`inline while`も`inline for`と同様、コンパイル時に繰り返し計算を行わせるための構文である。例は省略する。
+
+### 匿名構造体
+
+リテラル構築時における`struct`の型は省略することができる。匿名構造体は他の宣構済の構造体に型強制することが可能である。
+
+```rust
+test "anonymous struct literal" {
+    const Point = struct { x: i32, y: i32 };
+
+    var pt: Point = .{
+        .x = 13,
+        .y = 67,
+    };
+    try expect(pt.x == 13);
+    try expect(pt.y == 67);
+}
+```
+
+また、型強制せずanytypeの完全な匿名構造体として扱うことも出来る。
+
+```rust
+test "fully anonymous struct" {
+    try dump(.{
+        .int = @as(u32, 1234),
+        .float = @as(f64, 12.34),
+        .b = true,
+        .s = "hi",
+    });
+}
+
+fn dump(args: anytype) !void {
+    try expect(args.int == 1234);
+    try expect(args.float == 12.34);
+    try expect(args.b);
+    try expect(args.s[0] == 'h');
+    try expect(args.s[1] == 'i');
+}
+```
+
+さらに、フィールド名を持たない匿名構造体を定義できる。これは **タプル** という。タプルは配列と似たような性質を持つ（イテレーション可能、添字アクセス可能、`++`や`**`演算子が使える、`len`フィールドを持つ）。タプルは内部的には `"0"` から始まる数値のフィールド名を持つ。そのため、`@"0"` のような記法でフィールドにアクセス可能である（`@""`というのは特殊な文法で、`""`中の文字列が識別子として解釈される）。
+
+```rust
+test "tuple" {
+    const values = .{
+        @as(u32, 1234),
+        @as(f64, 12.34),
+        true,
+        "hi",
+    } ++ .{false} ** 2;
+    try expect(values[0] == 1234);
+    try expect(values[4] == false);
+    inline for (values, 0..) |v, i| {
+        if (i != 2) continue;
+        try expect(v);
+    }
+    try expect(values.len == 6);
+    try expect(values.@"3"[0] == 'h');
+}
+```
+
+### 番兵終端（sentinel termination）
+
+配列とスライス、そしてポインタの多くは末尾に終端値を持ち、それらの要素の型の値で終端できる。番兵終端を考慮すると、配列は`[N:t]T`, スライスは`[:t]T`, ポインタは`[*t]T`という構文で記述され、`t`は要素の型 `T` の値である。
+
+番兵終端配列の例としてビルトイン `@bitCast` でunsafeなビット演算型の変換を行うケースを取り上げる。次の例で、配列の最後の要素の後に値0の番兵が続くことが分かる。
+
+```rust
+test "sentinel termination" {
+    const terminated = [3:0]u8{ 3, 2, 1 };
+    try expect(terminated.len == 3);
+    try expect(@ptrCast(*const [4]u8, &terminated)[3] == 0);
+}
+```
+
+文字列リテラルの型は、`*const [N:0]u8` で、N は文字列の長さである。これにより、文字列リテラルは番兵終端つきスライスや終端番兵つき多要素ポインタに型強制することができる。なお、文字列リテラルはUTF-8エンコードされている。
+
+```rust
+test "string literal" {
+    try expect(@TypeOf("hello") == *const [5:0]u8);
+}
+```
+
+`[*:0]u8` と `[*:0]const u8` は、C言語の文字列と厳密に同じデータを表す型である。
+
+```rust
+test "C string" {
+    const c_string: [*:0]const u8 = "hello";
+    var array: [5]u8 = undefined;
+
+    var i: usize = 0;
+    while (c_string[i] != 0) : (i += 1) {
+        array[i] = c_string[i];
+    }
+}
+```
+
+番兵終端型は非番兵終端型にキャストできる。
+
+```rust
+test "coercion" {
+    var a: [*:0]u8 = undefined;
+    const b: [*]u8 = a;
+    _ = b;
+
+    var c: [5:0]u8 = undefined;
+    const d: [5]u8 = c;
+    _ = d;
+
+    var e: [:10]f32 = undefined;
+    const f = e;
+    _ = f;
+}
+```
+
+番兵終端スライシングは番兵終端付きスライスを構文`x[n..m:t]`によって作成できるようにしている。ここで `t` は終端値である。これは、プログラマーがメモリ中のデータが適切に終端していることをassertし、不正な挙動を検出するために使われる。
+
+```rust
+test "sentinel terminated slicing" {
+    var x = [_:0]u8{255} ** 3;
+    const y = x[0..3 :0];
+    _ = y;
+}
+```
+
+### Vectors
+
+ZigはSIMDのためにVector型を提供している。これは数学的な意味でのベクトルや、C++の `std::vector` とは異なるものなので、混同しないように注意する必要がある。Vectorは `@Type` ビルトインを利用して構築できる。また、`std.meta.Vector`を使って簡単に書くこともできる。
+
+Vectorは要素としてboolean, integer, float型の値ないしポインタのみを保持できる
+
+要素が同じ型を持っており、長さが同じVector同士については演算子が使える。これらの演算は `std.meta.eql` で2つのVectorの要素の型が等しいかチェックしながら行われる（`std.meta.eql`は構造体など他の型にも使える）。
+
+```rust
+const meta = @import("std").meta;
+const Vector = meta.Vector;
+
+test "vector add" {
+    const x: Vector(4, f32) = .{ 1, -10, 20, -1 };
+    const y: Vector(4, f32) = .{ 2, 10, 0, 1 };
+    const z = x + y;
+    try expect(meta.eql(z, Vector(4, f32){ 3, 0, 20, 0 }));
+}
+```
+
+Vector は添字アクセス可能である。
+
+```rust
+test "vector indexing" {
+    const x: Vector(4, u8) = .{ 255, 0, 255, 0 };
+    try expect(x[0] == 255);
+}
+```
+
+組み込み関数 `@splat` は、すべての値が同じVectorを構築するのに使える。以下では、Vectorをスカラー倍するために使っている。
+
+```rust
+test "vector * scalar" {
+    const x: Vector(3, f32) = .{ 12.5, 37.5, 2.5 };
+    const y = x * @splat(3, @as(f32, 2));
+    try expect(meta.eql(y, Vector(3, f32){ 25, 75, 5 }));
+}
+```
+
+Vectorは配列のようなlenフィールドを持たないが、ループすることはできる。以下では、`@typeInfo(@TypeOf(x)).Vector.len` のショートカットとして、`std.mem.len`を使いVectorの長さを特定している。
+
+```rust
+const len = @import("std").mem.len;
+
+test "vector looping" {
+    const x = Vector(4, u8){ 255, 0, 255, 0 };
+    var sum = blk: {
+        var tmp: u10 = 0;
+        var i: u8 = 0;
+        while (i < 4) : (i += 1) tmp += x[i];
+        break :blk tmp;
+    };
+    try expect(sum == 510);
+}
+```
+
+Vectorはその要素の型を持つ配列に型強制できる。
+
+```rust
+const arr: [4]f32 = @Vector(4, f32){ 1, 2, 3, 4 };
+```
+
+---
+
+## 脚注
+
+[^1]: 当サイトのシンタックスハイライトは [Shiki](https://github.com/shikijs/shiki) を使っている。Shikiではzigはまだサポートされていない。構文パターンはZig公式の[zig.tmLanguage.json](https://github.com/ziglang/vscode-zig/blob/master/syntaxes/zig.tmLanguage.json)で定義されているので、流用すればイケそうだ。しかし、現時点でプルリクエストする気力がないため、キーワードが一部似通っているRustのハイライトで代用している。
+[^2]: この値の実体は標準ライブラリの構造体である。
+[^3]: constの挙動に興味がある場合 https://stackoverflow.com/a/62567550/695615 も参照されたい。
+[^4]: このように書いてあることから分かるように、ライブラリにおいてmainは必須でない。
+[^5]: 実際には、タプルは匿名構造体の特殊パターンである。
+[^6]: もちろん、ディスクリプタ（writer）に標準出力（ディスプレイ）でなくファイルなどを指定した場合は、ディスクフルなどで現実的に失敗するケースがあるため、エラー処理を怠ってはいけない。
+[^7]: [Zig Language Reference](https://ziglang.org/documentation/master/#AssignmentS)
+[^8]: [Chapter 1 - Basics | ziglearn.org](https://ziglearn.org/chapter-1/)
+[^9]: [ratfactor/ziglings](https://github.com/ratfactor/ziglings)
+[^10]: 正確には非セーフモード（`ReleaseFast`, `ReleaseSmall`）では未定義動作、セーフモード（`ReleaseSafe`, `Debug`）でコンパイルした場合はpanicを起こす。
+[^11]: キャプチャに[ネストされた値を直接展開する構文はないため](https://github.com/ziglang/zig/issues/967)、入れ子のTagged Unionをバラす場合は、switchを入れ子にして地道に値を取り出す必要がある。
+[^12]: 厳密にはここで受け取る引数はコンテナである。Zigにおいて変数と関数が生えうるような何かをコンテナと呼ぶ。コンテナには構造体、共用体、列挙体、そしてopaque型がある。

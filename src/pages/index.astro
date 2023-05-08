@@ -1,0 +1,75 @@
+---
+import { SITE } from '~/config.mjs';
+import Layout from '~/layouts/PageLayout.astro';
+
+import Features2 from '~/components/widgets/Features2.astro';
+
+const meta = {
+  title: SITE.title,
+  description: SITE.description,
+  dontUseTitleTemplate: true,
+};
+---
+
+<Layout {meta}>
+  <Features2
+    title="Table of Contents"
+    subtitle="🎩 Axolotlのウェブサイトです（準備中）"
+    highlight=""
+    items={[
+      {
+        title: '計算機科学',
+        description:
+          '計算機にまつわる軽いコラムを書く予定。筆者はごくごくアマチュアです',
+        icon: 'carbon:function-math',
+        url: 'compsci',
+      },
+      {
+        title: 'プログラミング',
+        description:
+          '作ってみた、やってみた、解いてみた、マイナー言語を覚えてみた系を中心とした話題',
+        icon: 'vscode-icons:file-type-zig',
+        url: '/category/programming'
+      },
+      // {
+      //   title: 'News',
+      //   description:
+      //     'ycombinator, lobsters, reddit等よりうわべの情報収集をするところ。メモともいう',
+      //   icon: 'logos:reddit-icon',
+      // },
+      {
+        title: 'Readings',
+        description:
+          '（準備中）本や論文や記事を読んでまとまった感想を書く',
+        icon: 'mdi:book',
+      },
+      {
+        title: 'GitHub',
+        description:
+          '翻訳や小さいツール・ライブラリを投下する予定',
+        icon: 'mdi:github',
+        url: 'https://github.com/coalg',
+      },
+      {
+        title: 'Zenn',
+        description:
+          '周知すべき話題があるときはここに記事を書く予定',
+        icon: 'simple-icons:zenn',
+        url: 'https://zenn.dev/coalg',
+      },
+      {
+        title: 'Qiita',
+        description:
+          '過去記事はここにある（といっても1記事だけ…）',
+        icon: 'simple-icons:qiita',
+        url: 'https://qiita.com/coalg',
+      },
+      {
+        title: 'Contact',
+        description:
+          '準備中',
+        icon: 'icon-park:appointment',
+      },
+    ]}
+  />
+</Layout>

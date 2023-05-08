@@ -1,0 +1,30 @@
+---
+import { SITE } from '~/config.mjs';
+import Layout from '~/layouts/PageLayout.astro';
+
+import Features2 from '~/components/widgets/Features2.astro';
+
+const meta = {
+  title: SITE.title,
+  description: SITE.description,
+  dontUseTitleTemplate: true,
+};
+---
+
+<Layout {meta}>
+  <Features2
+    title="Computer Science"
+    subtitle="💡雑多なネタ帳"
+    highlight=""
+    items={[
+      {
+        title: 'LLM風説集',
+        description:
+          '2022/11末に公開されたChatGPTを中心としたLLMに関する非網羅的な論説集',
+        icon: 'uil:science',
+        url: 'https://github.com/coalg/diary/issues/12'
+      },
+    ]}
+  />
+
+</Layout>
