@@ -1,0 +1,97 @@
+---
+publishDate: 2023-05-11T00:00:00Z
+title: HLASMとz390入門
+description: メインフレームエミュレータのz390でアセンブリに入門する
+excerpt: メインフレームエミュレータのz390でアセンブリに入門する（書きかけ）
+category: programming
+icon: vscode-icons:file-type-assembly
+tags:
+  - assembly
+---
+
+## はじめに
+
+[z390](https://z390development.github.io/z390/)はJavaで書かれたポータブルなメインフレームエミュレータ実装である。以下の特徴が挙げられる。
+
+- IBM@ HLSAM互換なマクロアセンブラ
+- QSAM/VSAM互換なファイル処理
+- TN3270互換なデータストリーム
+- CICS互換なトランザクション処理
+
+z390の開発目的は、教育と、現代的なツールでメインフレームの開発を実施することである。
+
+## z390のインストール
+
+HLASMの導入ページは以下の通り。
+
+> [Installation - z390](https://z390development.github.io/z390/getting_started/install/)
+
+ページの指示の通り、以下のステップでインストールする。
+
+- Javaランタイムをインストールする
+- z390をダウンロードする
+- ファイルを解凍し、`/path/to/z390`, `/path/to/z390/bat`にパスを通す。
+
+## Hello z390
+
+最初のプログラム（Hello world）は以下の通り記述する。
+
+```asm
+HELLO    CSECT
+         BASR  15,0
+         USING *,15
+         WTO   'Hello z390!'
+         BR    14
+         END
+```
+
+桁が重要であるため、記述ルールには注意（参考リンク後述）。VSCodeを使うと [COBOL拡張](https://marketplace.visualstudio.com/items?itemName=bitlang.cobol) から桁確認用のルーラーと構文ハイライトが得られる。
+
+`hello.mlc` で保存したファイルをコンパイルしてみる。
+
+```
+❯ C:\z390\bat\asmlg .\HELLO.MLC "SYSMAC(C:\z390\mac+)"
+10:46:43 HELLO     MZ390 START USING z390 v1.8.1 ON J2SE 11.0.12 05/11/23
+10:46:43 HELLO     MZ390 ENDED   RC= 0 SEC= 0 MEM(MB)= 80 IO=225
+10:46:43 HELLO     LZ390 START USING z390 v1.8.1 ON J2SE 11.0.12 05/11/23
+10:46:43 HELLO     LZ390 ENDED   RC= 0 SEC= 0 MEM(MB)= 18 IO=30
+10:46:44 HELLO     EZ390 START USING z390 v1.8.1 ON J2SE 11.0.12 05/11/23
+hello
+10:46:44 HELLO     EZ390 ENDED   RC= 0 SEC= 0 MEM(MB)= 25 IO=23 INS=5
+```
+
+最初のステップでアセンブル、次でリンクエディット、最後に実行が行われ、`Hello z390!`が出力されている。
+
+## 最低限の記述ルール
+
+> [03.アセンブラー言語の概説（コーディングの基礎） » 「メインフレーム・コンピューター」で遊ぼう](http://www.arteceed.net/755.html)
+
+- 書式に注意
+  - ラベルは1桁目に記述
+  - 命令はラベルの後に1文字以上の空白を置いて記述
+  - ラベルがない行では2桁目以降から記述
+  - オペランドは命令の後に1文字以上の空白を置いて記述
+  - オペランド後ろに1文字以上の空白を置いてコメントを記述できる
+- プログラムはCSECTで始まりENDで終わる
+- USINGでベースレジスタの設定、DROPで解除ができる
+- 一般に定数はDC, 変数はDSで定義するのに使う
+  - DCは定義したデータ域に初期値を設定する命令
+  - DSは初期値を必要としない
+  - DCはオペランドでデータ型、長さ、複写回数、初期値が設定可能
+
+
+## z370とz390の相違点
+
+z390は、実際のz系メインフレームと比較してIO系処理の取り扱いが煩雑である。
+
+> [Differences between PC/370 vs z390](https://github.com/adelosa/learnasm370#differences-between-pc370-vs-z390)
+
+## 学習リソース
+
+初学者目線で読みやすいと感じたのは以下。
+
+- [趣旨 » 「メインフレーム・コンピューター」で遊ぼう](http://www.arteceed.net/)
+  - 新サイトに移行しましたと書かれているが、新サイトより情報が組織化されており多い気がする…
+- HLASMの非公式命令リファレンス
+  - [HLASM - Complete list of all Instructions, Sorted by Mnemonic](https://bixoft.nl/english/opl_bbbm.htm)
+  - [Mainframe Assembler Mini-Reference (pdf)](https://geraldine.fjfi.cvut.cz/~oberhuber/data/mainframe/prezentace/pmf/hlasmref.pdf)
