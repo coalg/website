@@ -4,7 +4,7 @@ const CONFIG = {
   name: 'Read -> Code a',
   github: 'http://www.github.com/coalg',
 
-  origin: 'https://transitive.page.dev',
+  origin: 'https://transitive.pages.dev/',
   basePathname: '/',
   trailingSlash: false,
 
