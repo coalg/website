@@ -37,11 +37,13 @@ const getNormalizedPost = async (post: CollectionEntry<'post'>): Promise<Post> =
     category: rawCategory,
     author = 'Anonymous',
     publishDate: rawPublishDate = new Date(),
+    updateDate: rawUpdateDate, // = rawPublishDate,
     ...rest
   } = data;
 
   const slug = cleanSlug(rawSlug.split('/').pop());
   const publishDate = new Date(rawPublishDate);
+  const updateDate = rawUpdateDate ? new Date(rawUpdateDate) : undefined;
   const category = rawCategory ? cleanSlug(rawCategory) : undefined;
   const tags = rawTags.map((tag: string) => cleanSlug(tag));
   const { icon = '' } = data;
@@ -51,6 +53,7 @@ const getNormalizedPost = async (post: CollectionEntry<'post'>): Promise<Post> =
     slug: slug,
 
     publishDate: publishDate,
+    updateDate: updateDate,
     category: category,
     tags: tags,
     author: author,

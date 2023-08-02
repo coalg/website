@@ -25,6 +25,11 @@ const { post } = Astro.props;
         <p>
           <Icon name="tabler:clock" class="w-4 h-4 inline-block -mt-0.5 dark:text-gray-400" />
           <time datetime={String(post.publishDate)}>{getFormattedDate(post.publishDate)}</time>
+
+          {
+            post.updateDate && <Icon name="ic:baseline-update" class="w-4 h-4 inline-block ml-2 -mt-0.5 dark:text-gray-400" />
+            <time datetime={String(post.updateDate)}>{getFormattedDate(post.updateDate)}</time>
+          }
           {
             post.category && (
               <>
@@ -36,6 +41,7 @@ const { post } = Astro.props;
               </>
             )
           }
+
         </p>
       </div>
         <h1

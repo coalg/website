@@ -10,6 +10,7 @@ const post = defineCollection({
     canonical: z.string().url().optional(),
 
     publishDate: z.date().or(z.string()).optional(),
+    updateDate: z.date().or(z.string()).optional(),
     draft: z.boolean().optional(),
 
     excerpt: z.string().optional(),

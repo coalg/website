@@ -3,6 +3,7 @@ export interface Post {
   slug: string;
 
   publishDate: Date;
+  updateDate?: Date;
   title: string;
   description?: string;
 
