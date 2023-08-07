@@ -10,8 +10,7 @@ const CONFIG = {
 
   title: ':: Read -> Code a',
   description:
-    'coding for fun!',
-  // defaultImage: defaultImage,
+    'プログラミングと計算機に関する個人ウェブサイト',
 
   defaultTheme: 'system', // Values: "system" | "light" | "dark" | "light:only" | "dark:only"
 

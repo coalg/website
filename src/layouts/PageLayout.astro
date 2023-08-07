@@ -18,7 +18,7 @@ const { meta } = Astro.props;
 <Layout {meta}>
   <!-- <Announcement /> -->
   <Header { ...headerData }/>
-  <main>
+  <main class="bg-blue-50 dark:bg-blue-900">
     <slot />
   </main>
   <slot name="footer">

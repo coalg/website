@@ -1,0 +1,27 @@
+---
+import { Icon } from 'astro-icon'
+
+export interface Props {
+    icon: string,
+    name: string,
+    end?: boolean,
+    time?: string,
+}
+
+const { icon, name, end = false, time} = Astro.props;
+---
+
+<div class={end ? "chat chat-end": "chat chat-start"}>
+  <div class="chat-image avatar">
+    <div class="w-10 rounded-full">
+      <Icon name={icon} class="w-10 h-10" />
+    </div>
+  </div>
+  <div class="chat-header">
+    {name}
+    { time ? <time class="text-xs opacity-50">{time}</time> : "" }
+  </div>
+  <div class="chat-bubble">
+    <slot />
+  </div>
+</div>
