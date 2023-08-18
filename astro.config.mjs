@@ -7,7 +7,7 @@ import sitemap from '@astrojs/sitemap';
 import image from '@astrojs/image';
 import mdx from '@astrojs/mdx';
 import partytown from '@astrojs/partytown';
-import compress from '@otterlord/astro-compress';
+import compress from 'astro-compress';
 
 import { SITE } from './src/config.mjs';
 
@@ -42,15 +42,15 @@ export default defineConfig({
     ),
 
     compress({
-      css: true,
-      html: {
+      CSS: true,
+      HTML: {
         removeAttributeQuotes: false,
       },
-      img: false,
-      js: true,
-      svg: false,
+      Image: false,
+      JavaScript: true,
+      SVG: false,
 
-      logger: 1,
+      Logger: 1,
     }),
   ],
 
