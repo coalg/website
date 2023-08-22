@@ -1,0 +1,140 @@
+---
+publishDate: 2023-08-20T21:00:00Z
+title: Nickel入門以前
+description: Nickel tutorialによるNickelの初歩
+excerpt: 5分で入門するNickel configuration language
+category: programming
+icon: mdi:cube-outline
+tags:
+  - nickel
+draft: false
+---
+
+Nickelを開発しているTweagの社員が以下のような入門動画を出していたので、見てみたという日記。言語の包括的な入門では全くないが、ドキュメントの最初に書いてはいない勘所（query の投げ方、動的型検査から静的型検査への切り替え）を説明している。
+
+[Nickel 1.0 is out! A tutorial - YouTube](https://www.youtube.com/watch?v=DzuoYmA2pd4)
+
+## 速習Nickel
+
+Nickelは軽量・合成的コード・合成的データ・選択的な型付け・契約による設計という特徴を持つ設定記述言語である。
+
+Nickelはどんな複雑な設定を生成するのにも使えるが、以下のユースケースを特に念頭に置いている。
+
+- Nixパッケージマネージャ
+- Infrastructure as Code
+- ビルドシステムの依存グラフ
+
+### 設定
+
+インストールする。使うだけなら`cargo`からインストールするのが一番簡単。lspもついでに入れる。
+
+```sh
+❯ cargo install nickel-lang nickel-lang-lsp
+```
+
+好きなエディタを設定する。vscodeの場合tweag作のNickel Language Support拡張を入れる。
+
+### 最初のプログラム
+
+`config.ncl` で以下のファイルを作成する。
+
+```nickel
+let Schema = {
+    foo.bar
+      | doc "The `foo.bar` option"
+      | String,
+} in
+
+{
+    foo.bar = "hello, world!",
+} | Schema
+````
+
+`nickel query` でファイルに定義されているフィールドとメタデータを確認できる。また要素を指定することで制約を確認することができる。
+
+```sh
+❯ nickel query -f config.ncl
+Requested metadata were not found for this value.
+
+Available fields
+• foo
+
+❯ nickel query -f .\intro\config.ncl foo.bar
+• contract: String
+• documentation: The foo.bar option
+```
+
+NickelにはREPLがある。また標準ライブラリを表す特殊な値として `std` があり、これを `:query` で見ることができる。
+
+```sh
+❯ nickel repl
+nickel> :query std
+Requested metadata were not found for this value.
+
+Available fields
+• FailWith
+• array
+• contract
+• deep_seq
+• deserialize
+• enum
+• fail_with
+• function
+• hash
+• is_array
+• is_bool
+• is_enum
+• is_function
+• is_number
+• is_record
+• is_string
+• number
+• record
+• seq
+• serialize
+• string
+• to_string
+• trace
+• typeof
+```
+
+例として `array` に対して使える高階関数 `filter` 使い方を調べる時は以下のようにする。
+
+
+```sh
+nickel> :query std array
+...
+• filter
+...
+
+nickel> :query std array.filter
+• type: forall a. (a -> Bool) -> Array a -> Array a
+• documentation
+
+filter f xs returns an array containing all elements from xs that satisfy f.
+
+Examples
+
+std.array.filter (fun x => x <= 3) [ 4, 3, 2, 5, 1 ] =>
+  [ 3, 2, 1 ]
+```
+
+以下は `std.array.map` の引数の適用順序を間違えている例である。
+
+```
+(std.array.map [] (fun x => x + 1))
+```
+
+この状態だとLSPはエラーを出さない。Nickelはデフォルトで動的型検査をしており、引数の型がmapの型に適合するか確認していないからである。
+
+ワイルドカードを使うと、動的型検査から静的型検査に切り替えてくれる。
+
+```
+(std.array.map [] (fun x => x + 1)) : _
+```
+
+![static type checking in nickel](src/assets/images/typecheck.png)
+
+queryと静的型検査はコードを書くのに有用な道具立てであることが分かっただろう。
+
+最初に書いたように、Nickelは契約による設計という特徴を備えており、自分の設計したカスタム型で値の内容を検査することができる。これにより、任意のレコードがスキーマ定義に適合しているかの検査を、非常に柔軟に記述することができる。
