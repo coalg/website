@@ -1,33 +1,15 @@
 ---
 import { SITE, BLOG } from '~/config.mjs';
 
+import { blogCategoryRobots, getStaticPathsBlogCategory } from '~/utils/blog';
 import Layout from '~/layouts/PageLayout.astro';
 import BlogList from '~/components/blog/List.astro';
 import Headline from '~/components/blog/Headline.astro';
 import Pagination from '~/components/blog/Pagination.astro';
 
-import { fetchPosts } from '~/utils/blog';
-import { CATEGORY_BASE } from '~/utils/permalinks';
 
 export async function getStaticPaths({ paginate }) {
-  if (BLOG?.disabled || BLOG?.category?.disabled) return [];
-
-  const posts = await fetchPosts();
-  const categories = new Set();
-  posts.map((post) => {
-    typeof post.category === 'string' && categories.add(post.category.toLowerCase());
-  });
-
-  return Array.from(categories).map((category: string) =>
-    paginate(
-      posts.filter((post) => typeof post.category === 'string' && category === post.category.toLowerCase()),
-      {
-        params: { category: category, blog: CATEGORY_BASE || undefined },
-        pageSize: BLOG.postsPerPage,
-        props: { category },
-      }
-    )
-  );
+  return await getStaticPathsBlogCategory({paginate});
 }
 
 const { page, category } = Astro.props;

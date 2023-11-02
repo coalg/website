@@ -1,9 +1,21 @@
 import { getCollection } from 'astro:content';
 import type { CollectionEntry } from 'astro:content';
 import type { Post } from '~/types';
-import { cleanSlug, trimSlash, POST_PERMALINK_PATTERN } from './permalinks';
+import { APP_BLOG } from '~/utils/config';
+import { cleanSlug, trimSlash, BLOG_BASE, POST_PERMALINK_PATTERN, CATEGORY_BASE, TAG_BASE } from './permalinks';
+import { PageNumberParamNotFound } from "../../node_modules/astro/dist/core/errors/errors-data.js";
 
-const generatePermalink = async ({ id, slug, publishDate, category }) => {
+const generatePermalink = async ({
+  id,
+  slug,
+  publishDate,
+  category,
+}: {
+  id: string;
+  slug: string;
+  publishDate: Date;
+  category: string | undefined;
+}) => {
   const year = String(publishDate.getFullYear()).padStart(4, '0');
   const month = String(publishDate.getMonth() + 1).padStart(2, '0');
   const day = String(publishDate.getDate()).padStart(2, '0');
@@ -30,41 +42,51 @@ const generatePermalink = async ({ id, slug, publishDate, category }) => {
 
 const getNormalizedPost = async (post: CollectionEntry<'post'>): Promise<Post> => {
   const { id, slug: rawSlug = '', data } = post;
-  const { Content } = await post.render();
+  const { Content, remarkPluginFrontmatter } = await post.render();
 
   const {
+    publishDate: rawPublishDate = new Date(),
+    updateDate: rawUpdateDate,
+    title,
+    excerpt,
+    image,
     tags: rawTags = [],
     category: rawCategory,
-    author = 'Anonymous',
-    publishDate: rawPublishDate = new Date(),
-    updateDate: rawUpdateDate, // = rawPublishDate,
-    ...rest
+    author,
+    draft = false,
+    metadata = {},
   } = data;
 
-  const slug = cleanSlug(rawSlug.split('/').pop());
+  const slug = cleanSlug(rawSlug); // cleanSlug(rawSlug.split('/').pop());
   const publishDate = new Date(rawPublishDate);
   const updateDate = rawUpdateDate ? new Date(rawUpdateDate) : undefined;
   const category = rawCategory ? cleanSlug(rawCategory) : undefined;
   const tags = rawTags.map((tag: string) => cleanSlug(tag));
-  const { icon = '' } = data;
 
   return {
     id: id,
     slug: slug,
+    permalink: await generatePermalink({ id, slug, publishDate, category }),
 
     publishDate: publishDate,
     updateDate: updateDate,
+
+    title: title,
+    excerpt: excerpt,
+    image: image,
+
     category: category,
     tags: tags,
     author: author,
-    icon: icon,
 
-    ...rest,
+    draft: draft,
+
+    metadata,
 
     Content: Content,
-    // or 'body' in case you consume from API
+    // or 'content' in case you consume from API
 
-    permalink: await generatePermalink({ id, slug, publishDate, category }),
+    readingTime: remarkPluginFrontmatter?.readingTime,
   };
 };
 
@@ -80,6 +102,20 @@ const load = async function (): Promise<Array<Post>> {
 };
 
 let _posts: Array<Post>;
+
+/** */
+export const isBlogEnabled = APP_BLOG.isEnabled;
+export const isBlogListRouteEnabled = APP_BLOG.list.isEnabled;
+export const isBlogPostRouteEnabled = APP_BLOG.post.isEnabled;
+export const isBlogCategoryRouteEnabled = APP_BLOG.category.isEnabled;
+export const isBlogTagRouteEnabled = APP_BLOG.tag.isEnabled;
+
+export const blogListRobots = APP_BLOG.list.robots;
+export const blogPostRobots = APP_BLOG.post.robots;
+export const blogCategoryRobots = APP_BLOG.category.robots;
+export const blogTagRobots = APP_BLOG.tag.robots;
+
+export const blogPostsPerPage = APP_BLOG?.postsPerPage;
 
 /** */
 export const fetchPosts = async (): Promise<Array<Post>> => {
@@ -124,4 +160,69 @@ export const findLatestPosts = async ({ count }: { count?: number }): Promise<Ar
   const posts = await fetchPosts();
 
   return posts ? posts.slice(0, _count) : [];
+};
+
+/** */
+export const getStaticPathsBlogList = async ({ paginate }) => {
+  console.log(paginate);
+  if (!isBlogEnabled || !isBlogListRouteEnabled) return [];
+  return paginate(await fetchPosts(), {
+    params: { blog: BLOG_BASE || undefined },
+    pageSize: blogPostsPerPage,
+  });
+};
+
+/** */
+export const getStaticPathsBlogPost = async () => {
+  if (!isBlogEnabled || !isBlogPostRouteEnabled) return [];
+  return (await fetchPosts()).flatMap((post) => ({
+    params: {
+      blog: post.permalink,
+    },
+    props: { post },
+  }));
+};
+
+/** */
+export const getStaticPathsBlogCategory = async ({ paginate }) => {
+  if (!isBlogEnabled || !isBlogCategoryRouteEnabled) return [];
+
+  const posts = await fetchPosts();
+  const categories = new Set();
+  posts.map((post) => {
+    typeof post.category === 'string' && categories.add(post.category.toLowerCase());
+  });
+
+  return Array.from(categories).flatMap((category: string) =>
+    paginate(
+      posts.filter((post) => typeof post.category === 'string' && category === post.category.toLowerCase()),
+      {
+        params: { category: category, blog: CATEGORY_BASE || undefined },
+        pageSize: blogPostsPerPage,
+        props: { category },
+      }
+    )
+  );
+};
+
+/** */
+export const getStaticPathsBlogTag = async ({ paginate }) => {
+  if (!isBlogEnabled || !isBlogTagRouteEnabled) return [];
+
+  const posts = await fetchPosts();
+  const tags = new Set();
+  posts.map((post) => {
+    Array.isArray(post.tags) && post.tags.map((tag) => tags.add(tag.toLowerCase()));
+  });
+
+  return Array.from(tags).flatMap((tag: string) =>
+    paginate(
+      posts.filter((post) => Array.isArray(post.tags) && post.tags.find((elem) => elem.toLowerCase() === tag)),
+      {
+        params: { tag: tag, blog: TAG_BASE || undefined },
+        pageSize: blogPostsPerPage,
+        props: { tag },
+      }
+    )
+  );
 };

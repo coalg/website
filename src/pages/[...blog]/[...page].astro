@@ -6,15 +6,11 @@ import BlogList from '~/components/blog/List.astro';
 // import Headline from '~/components/blog/Headline.astro';
 import Pagination from '~/components/blog/Pagination.astro';
 
-import { fetchPosts } from '~/utils/blog';
+import { getStaticPathsBlogList, fetchPosts } from '~/utils/blog';
 import { BLOG_BASE } from '~/utils/permalinks';
 
 export async function getStaticPaths({ paginate }) {
-  if (BLOG?.disabled || BLOG?.list?.disabled) return [];
-  return paginate(await fetchPosts(), {
-    params: { blog: BLOG_BASE || undefined },
-    pageSize: BLOG.postsPerPage,
-  });
+  return await getStaticPathsBlogList({paginate});
 }
 
 const { page } = Astro.props;
