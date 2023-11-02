@@ -3,11 +3,9 @@ import { SITE, BLOG } from '~/config.mjs';
 
 import Layout from '~/layouts/PageLayout.astro';
 import BlogList from '~/components/blog/List.astro';
-// import Headline from '~/components/blog/Headline.astro';
 import Pagination from '~/components/blog/Pagination.astro';
 
-import { getStaticPathsBlogList, fetchPosts } from '~/utils/blog';
-import { BLOG_BASE } from '~/utils/permalinks';
+import { getStaticPathsBlogList } from '~/utils/blog';
 
 export async function getStaticPaths({ paginate }) {
   return await getStaticPathsBlogList({paginate});
