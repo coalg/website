@@ -1,0 +1,28 @@
+---
+publishDate: 2023-11-03T00:00:00Z
+updateDate: 2023-11-03T00:00:00Z
+title: Terraformのライセンス変更に関するタイムライン
+description: TerraformのBUSL化発表に伴うイベントの記録
+excerpt: TerraformのBUSL化発表に伴うイベントの記録
+category: programming
+tags:
+  - infra
+---
+
+なぜ今更というのはさておき…
+
+## タイムライン
+
+| 日付 | 出来事 | 詳細 |
+| ---- | -------- | ------ |
+| 2023/8/10 | [HashiCorp adopts Business Source License](https://www.hashicorp.com/blog/hashicorp-adopts-business-source-license) | ビジネスソースライセンスへの移行を発表。これは競合製品を提供する組織について利用に制約を掛けるもの。 |
+| 2023/8/11 | [What HashiCorp’s license change means for Spacelift customers](https://spacelift.io/blog/hashicorps-license-change) | IaC管理ツールのSpaceliftが声明を発表。ライセンス変更による影響は特にないと考えているが、弁護士や専門家と協議はしている。GitHubがGitのエコシステムを搾取しているとは言い難く、むしろGitの成功はGitHubやBitbucketやGitLabに多くを負っているように、OSSレイヤの上に商用レイヤのソフトが載ることは何ら問題ないだろう、という考え。Terraformの商用抽象化レイヤでの開発競争は結局多くのコンセプトがTerraform Cloudのものに辿り着いている。Terraform自体も多数のOSSの上に成立しており、多数のボランティアの元に成立している。エコシステムの存在を無視することは出来ないだろう。 |
+| 2023/8/11 | [OpenTerraform – an MPL fork of Terraform after HashiCorp's license change](https://news.ycombinator.com/item?id=37088591) | Terraform用CIランナーのDiggerがTerraformをフォーク。Digger自体はTerraformに依存していないが、Hashicorpの最近の価格変更やライセンス変更について疑念を持っている。MPLライセンスの時点でのソフトウェアをフォークしておくことで安全な立ち位置を確保したいと考えた。（8/16確認時点で削除されている） |
+| 2023/8/11頃 | Infisical, CovertといったVault alternativeが若干の注目を浴びる | - |
+| 2023/8/15 | [OpenTF Foundation](https://opentf.org/) | TerraformのBUSL化は劇薬である。HashiCorpはTerraformのライセンスを今すぐOSSに戻すべき。さもなければforkする。 |
+| 2023/8/15 | [The future of Terraform must be open &#124; by Yevgeniy Brikman &#124; Aug, 2023 &#124; Gruntwork](https://blog.gruntwork.io/the-future-of-terraform-must-be-open-ab0b9ba65bca) | OpenTFの発起人によるブログ記事。TerraformのBUSL化はエコシステムに重大な悪影響を及ぼすという論調。 |
+| 2023/8/23 | [HashiCorp, Terraform, and OpenTF \[LWN.net\]](https://lwn.net/SubscriberLink/942346/014f407d03f4cd03/) | LWN.netによるoverview |
+| 2023/8/25 | [OpenTF Announces Fork of Terraform](https://opentf.org/announcement) | OpenTFがTerraformのforkを発表。適切なURLが振られていないので今後見えなくなるかも |
+| 2023/9/5 | [OpenTF repository is now public &#124; Hacker News](https://news.ycombinator.com/item?id=37392581) | OpenTFがリポジトリを公開 |
+| 2023/9/20 | [Linux Foundation Launches OpenTofu: A New Open Source Alternative to Terraform](https://www.linuxfoundation.org/press/announcing-opentofu) | Linux FoundationがOpenTofuの発足を宣言（OpenTFから名称変更）。今後5年に渡り18名のフルコミット開発者を割り当てる体制。 |
+| 2023/9/20 | [OpenTofu](https://opentofu.org/) | OpenTFがOpenTofuにリネーム |
