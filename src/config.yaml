@@ -1,5 +1,5 @@
 site:
-  name: Song of bird
+  name: Ladder of the Blog
   site: 'https://transitive.pages.dev'
   base: '/'
   trailingSlash: false
@@ -9,8 +9,8 @@ site:
 # Default SEO metadata
 metadata:
   title:
-    default: Blog of Ladder
-    template: '%s — Blog of Ladder'
+    default: Ladder of the Blog
+    template: '%s — Ladder of the Blog'
   description: "プログラミング、計算機科学、ソフトウェアエンジニアリングに関するブログ"
   robots:
     index: true
