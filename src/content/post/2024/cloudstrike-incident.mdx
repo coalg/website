@@ -1,0 +1,62 @@
+---
+publishDate: 2024-08-15T00:00:00Z
+updateDate: 2024-08-15T00:00:00Z
+title: CrowdStrikeによる世界的システム障害まとめ
+description: CrowdStrikeによる世界的システム障害まとめ
+category: reading
+tags:
+  - incident
+  - security
+draft: false
+---
+
+## 何が起きたか
+
+- 障害は日本時間の2024/7/19 午後1時ごろより発生した。成田空港で格安航空ジェットスター・ジャパンの搭乗システムが利用不能になり、 日本航空のホームページやアプリで国際線の予約や購入などサービスが利用できなくなった。また、USJでは一部レストランやショップでレジが使えなくなるトラブルが発生、原因調査のため営業を休止する事態となった。セブンイレブンではPOSAカードと呼ばれるプリペイドカードが利用不能となり、マクドナルドでは障害が起きた店舗で営業取りやめとなった（一部は当日に復旧）。大同生命では保険申し込みや解約が不能になった。[^1]
+- 影響は世界中に広がった。アメリカのアラスカ州やアリゾナ州などを含む複数の州で911が停止し、いくつかの病院も障害の影響を受けた。航空機は全世界で5078便が欠航した（世界全体の予定便の4.6%に相当）。公共交通機関でもメトロポリタン交通局の顧客情報システムが一時的にオフラインになるなど影響が発生した。タイムズスクエアのビルボードにはブルースクリーンが映し出された。F1ではルイス・ハミルトンとジョージ・ラッセルが所属するチーム・メルセデスのエンジニアがブルースクリーンに頭を抱える様子が報道された。イギリスではテレビ局スカイニュースが一時放送不能になり、また薬局は電子処方箋が使用不能となったことからサービスが中断に追い込まれた。[^1][^2][^3]
+- Microsoftは今回の問題で影響を受けた端末は850万台と推定している。[^11]
+
+## 障害の原因
+
+障害原因は、CrowdStrikeのセキュリティ製品「Falcon」のアップデート時不具合とされている。センサー設定と呼ばれる保護メカニズムの一環として配信されたファイルが、ブルースクリーン（BSoD）を引き起こしたとCrowdStrike公式サイトは説明している。センサー設定はチャネルファイルと呼ばれており、今回問題を引き起こしたのは291番のチャネルファイルである。これはFalconがWindows上で[名前付きパイプ](https://learn.microsoft.com/en-us/windows/win32/ipc/named-pipes)の1番に対して実行される内容を評価している。今回のアップデートでは新たに観測されたC2フレームワークが標的としている名前付きパイプの設定を更新するものだった。CrowdStrikeは今回の更新ファイルは1日に数回行われる定常作業の一環であり、特殊なものではなかったとしている。障害の根本原因について、CrowdStrikeは現在調査中としている。[^4]
+
+24日、CrowdStrikeは問題の原因について追加の報告を行った。[^15] 問題箇所はラピッド・レスポンス・コンテントと呼ばれるセンサーの動作を規定する設定値を含むバイナリファイルで、コンテントインタプリタというプログラムがこのファイルを読み込み、様々な挙動を行う。このファイルを生成する際プログラムバリデータで検証を行うが、バリデータ側のバグで異常を検出できないまま配信したことが原因としている。再発防止策として、ラピッド・レスポンス・コンテント配信前のテスト拡充（ローカル開発者環境でのテストを含む）、カナリーデプロイメントの導入とフィードバック収集、顧客にデプロイメントの配信タイミングをコントロールさせる、等が挙げられている。[^16]
+
+## 障害箇所の解析
+
+CrowdStrikeの障害報告が不十分ということもあり、外部ユーザーが sysファイル（`C-00000291-...32.sys`）を解析しクラッシュ原因を推察している。[^5][^6] 筆者が技術的な詳細を理解できていないが、`C-00000291-...32.sys` がゼロ埋めされた無効なデータとなっており、CrowdStrikeのドライバ（`CSAgent.sys`）が無効なデータをコピーしたことで今回のクラッシュが引き起こされた、と推測されているようだ。
+
+実際、マシンをセーフモードで起動してから `C-00000291-...32.sys` を削除することで、復旧可能という情報が流れている。[^7]
+
+## 3ヶ月前にも同様の問題
+
+CrowdStrikeは2024/4にも同様の障害をRocky LinuxおよびDebianで発生させていたことが明らかになっている。[^8] 影響システムが少なかったことから、当時世論の大きな関心を得るには至っていなかったようだ。CrowdStrikeは1日かけて問題が自分にあることを認め、また根本原因の解析には数週間が掛かった。原因はDebianとRocky Linuxがテストマトリクスから考慮漏れていたことによる。
+
+## セキュリティソフトウェアそのものに対する議論
+
+本事象は、セキュリティソフトウェア産業とそれを買い求める企業に対して広範な議論を巻き起こしている。
+
+Financial TimesはCrowdStrikeの内部的な品質維持プロセスに疑問を投げかけた上で、そもそもソフトウェアセキュリティのような根本的にクリティカルな機能をサードパーティに丸投げしてよいのか、自動的に更新をデプロイさせる慣行を受け入れているのはなぜなのか、という点についても疑義を呈している。また、少数企業による寡占が進むセキュリティソフトウェアに対して、今後多様な調達手段と冗長化設計を考えなければならないことを示唆して記事を締めくくっている。[^9]
+
+The New York Timesでは、[デジタル回復性](https://www.ntt.com/business/lp/cyber-resilience.html)という観点から、アメリカ政府が想定していた最悪のサイバー攻撃シナリオは、ロシアや中国のハッカーがアメリカ全土の病院や水道網などを停止させるというものだったが、そうではなくCrowdStrikeの従業員による害意のない単純ミスから引き起こされたのはなぜか、という論調で意見を述べている。[^10]
+
+## Microsoftの対応
+
+Microsoftは本件に対してリカバリ手順を公開している。[^12] また、障害発生から3日後には起動可能USBドライブを差し込むと復旧可能にするツールを公開している。[^13] USB経由でのリカバリが不可能な端末については、PXEを使ったネットワーク経由での復旧を案内している。[^14]
+
+[^1]: [システム障害 世界各地で 空港など影響 国内でも ジェットスター・USJ セキュリティーソフト【19日詳細】 | NHK | 航空](https://www3.nhk.or.jp/news/html/20240719/k10014516561000.html)
+[^11]: [CrowdStrikeのブルスク問題の影響を受けたPCは世界で850万台──Microsoft推定 - ITmedia NEWS](https://www.itmedia.co.jp/news/articles/2407/21/news055.html)
+[^2]: [A global tech outage brought many computer systems and businesses to a screeching halt. Here’s what happened | CNN Business](https://edition.cnn.com/2024/07/20/tech/timeline-crowdstrike-system-outage/index.html)
+[^3]: [Chaos persists as IT outage could take time to fix, says cybersecurity firm boss - BBC News](https://www.bbc.com/news/live/cnk4jdwp49et)
+[^4]: [Technical Details: Falcon Update for Windows Hosts | CrowdStrike](https://www.crowdstrike.com/blog/falcon-update-for-windows-hosts-technical-details/)
+[^5]: [XユーザーのPatrick Wardleさん: 「I don't do Windows but here are some (initial) details about why the CrowdStrike's CSAgent.sys crashed Faulting inst: mov r9d, [r8] R8: unmapped address ...taken from an array of pointers (held in RAX), index RDX (0x14 * 0x8) holds the invalid memory address @_JohnHammond https://t.co/oqlAVwSlJj」 / X](https://x.com/patrickwardle/status/1814343502886477857)
+[^6]: [XユーザーのJeremy Howardさん: 「Wtf? The CrowdStrike file that broke everything was entirely full of null characters. How does this happen?」 / X](https://x.com/jeremyphoward/status/1814364640127922499)
+[^7]: [CrowdStrike fixes start at “reboot up to 15 times” and get more complex from there | Ars Technica](https://arstechnica.com/information-technology/2024/07/crowdstrike-fixes-start-at-reboot-up-to-15-times-and-get-more-complex-from-there/)
+[^8]: [CrowdStrike broke Debian and Rocky Linux months ago, but no one noticed - Neowin](https://www.neowin.net/news/crowdstrike-broke-debian-and-rocky-linux-months-ago-but-no-one-noticed/)
+[^9]: [It’s not just CrowdStrike - the cyber sector is vulnerable](https://cc.bingj.com/cache.aspx?d=464600016483&w=i7yXBm7GwofOVaoKk5qaOqy633_CL224)
+[^10]: [CrowdStrike Issue, Not Russia or China, Caused Tech Outage - The New York Times](https://www.nytimes.com/2024/07/19/us/politics/crowdstrike-outage.html)
+[^12]: [KB5042421: CrowdStrike issue impacting Windows endpoints causing an 0x50 or 0x7E error message on a blue screen - Microsoft Support](https://support.microsoft.com/en-us/topic/kb5042421-crowdstrike-issue-impacting-windows-endpoints-causing-an-0x50-or-0x7e-error-message-on-a-blue-screen-b1c700e0-7317-4e95-aeee-5d67dd35b92f)
+[^13]: [Microsoft、「CrowdStrike問題」に対処するUSBリカバリツールを提供 - PC Watch](https://pc.watch.impress.co.jp/docs/news/1610091.html)
+[^14]: [New Recovery Tool to help with CrowdStrike issue impacting Windows endpoints - Microsoft Community Hub](https://techcommunity.microsoft.com/t5/intune-customer-success/new-recovery-tool-to-help-with-crowdstrike-issue-impacting/ba-p/4196959)
+[^15]: [世界各地での大規模システム障害 問題検知できず配信が原因 | NHK | IT・ネット](https://www3.nhk.or.jp/news/html/20240725/k10014523391000.html)
+[^16]: [Falcon Content Update Preliminary Post Incident Report | CrowdStrike](https://www.crowdstrike.com/blog/falcon-content-update-preliminary-post-incident-report/)
