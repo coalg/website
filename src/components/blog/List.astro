@@ -12,7 +12,7 @@ const { posts } = Astro.props;
 <ul>
   {
     posts.map((post) => (
-      <li class="mb-8 py-2 px-4 md:mb-1 rounded-md bg-white dark:bg-black dark:text-gray-50">
+      <li class="mb-6 md:mb-6">
         <Item post={post} />
       </li>
     ))

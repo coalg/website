@@ -1,69 +1,60 @@
-import path from 'path'; import { fileURLToPath } from 'url';
-
-import { defineConfig } from 'astro/config';
-
-import tailwind from '@astrojs/tailwind';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { defineConfig, squooshImageService } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
+import tailwind from '@astrojs/tailwind';
 import mdx from '@astrojs/mdx';
 import partytown from '@astrojs/partytown';
+import icon from 'astro-icon';
 import compress from 'astro-compress';
-
-import { SITE } from './src/config.mjs';
-
+import astrowind from './vendor/integration';
+import { readingTimeRemarkPlugin, responsiveTablesRehypePlugin, lazyImagesRehypePlugin } from './src/utils/frontmatter.mjs';
+import customToc from "astro-custom-toc";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const hasExternalScripts = false;
+const whenExternalScripts = (items = []) => hasExternalScripts ? Array.isArray(items) ? items.map(item => item()) : [items()] : [];
 
-const whenExternalScripts = (items = []) =>
-  SITE.googleAnalyticsId ? (Array.isArray(items) ? items.map((item) => item()) : [items()]) : [];
-
+// https://astro.build/config
 export default defineConfig({
-  site: SITE.origin,
-  base: SITE.basePathname,
-  trailingSlash: SITE.trailingSlash ? 'always' : 'never',
-
   output: 'static',
-
-  integrations: [
-    tailwind({
-      config: {
-        applyBaseStyles: false,
-      },
-    }),
-    sitemap(),
-    mdx(),
-
-    ...whenExternalScripts(() =>
-      partytown({
-        config: { forward: ['dataLayer.push'] },
-      })
-    ),
-
-    compress({
-      CSS: true,
-      HTML: {
-        removeAttributeQuotes: false,
-      },
-      Image: false,
-      JavaScript: true,
-      SVG: false,
-
-      Logger: 1,
-    }),
-  ],
-
-  markdown: {
-    extendDefaultPlugins: true,
-    shikiConfig: {
-      theme: 'nord',
-      langs: [],
-      wrap: true,
+  integrations: [tailwind({
+    applyBaseStyles: false
+  }), sitemap(), icon({
+    include: {
+      tabler: ['*'],
+      'flat-color-icons': ['template', 'gallery', 'approval', 'document', 'advertising', 'currency-exchange', 'voice-presentation', 'business-contact', 'database']
     }
+  }), ...whenExternalScripts(() => partytown({
+    config: {
+      forward: ['dataLayer.push']
+    }
+  })), compress({
+    CSS: true,
+    HTML: {
+      'html-minifier-terser': {
+        removeAttributeQuotes: false
+      }
+    },
+    Image: false,
+    JavaScript: true,
+    SVG: false,
+    Logger: 1
+  }), astrowind({
+    config: './src/config.yaml'
+  }), customToc(), mdx()],
+  image: {
+    service: squooshImageService(),
+    domains: ['cdn.pixabay.com']
   },
-
+  markdown: {
+    remarkPlugins: [readingTimeRemarkPlugin],
+    rehypePlugins: [responsiveTablesRehypePlugin, lazyImagesRehypePlugin]
+  },
   vite: {
     resolve: {
       alias: {
-        '~': path.resolve(__dirname, './src'),
-      },
-    },
-  },
+        '~': path.resolve(__dirname, './src')
+      }
+    }
+  }
 });

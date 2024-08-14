@@ -3,4 +3,4 @@ layout: ../layouts/MarkdownLayout.astro
 title: "About Me"
 ---
 
-だらだら生きています。
+ブログ盆栽が苦手なソフトウェアエンジニア。

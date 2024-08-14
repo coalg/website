@@ -1,20 +1,18 @@
 ---
-import { SITE } from '~/config.mjs';
 import Layout from '~/layouts/PageLayout.astro';
 
 import Features2 from '~/components/widgets/Features2.astro';
 
-const meta = {
-  title: SITE.title,
-  description: SITE.description,
-  dontUseTitleTemplate: true,
-};
+// const meta = {
+//   title: ,
+//   description: SITE.description,
+//   dontUseTitleTemplate: true,
+// };
 ---
 
-<Layout {meta}>
+<Layout>
   <Features2
     title="Table of Contents"
-    subtitle="🎩 Axolotlのウェブサイトです（準備中）"
     highlight=""
     items={[
       {
@@ -58,12 +56,6 @@ const meta = {
           '過去記事はここにある（といっても1記事だけ…）',
         icon: 'simple-icons:qiita',
         url: 'https://qiita.com/coalg',
-      },
-      {
-        title: 'Contact',
-        description:
-          '準備中',
-        icon: 'icon-park:appointment',
       },
     ]}
   />
