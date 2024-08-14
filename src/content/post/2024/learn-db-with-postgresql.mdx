@@ -1,0 +1,60 @@
+---
+publishDate: 2024-08-14T00:00:00Z
+updateDate: 2024-08-14T00:00:00Z
+title: PostgreSQLで学ぶSQL入門の入門
+description: SQL入門
+excerpt: scoopでPostgreSQLをインストールする方法
+category: programming
+icon: logos:postgresql
+tags:
+  - db
+  - sql
+draft: false
+---
+
+最近SQLを書いていない。SQLを書こう。ということでSQLを書くことにした。
+
+まずPostgreSQLをインストールして起動する。scoopからインストールしたが、以下が参考になった。
+
+> [Install PostgreSQL on Windows by scoop.md](https://gist.github.com/ergin/51bc961b77fcc73394a6c6ba7e54ba0a)
+
+```bash
+$ scoop install postgresql
+$ cd ~\scoop\apps\postgresql\current\bin
+$ sudo pg_ctl.exe register -N PostgreSQL -D "~\scoop\apps\postgresql\current\data" -S auto
+$ sudo sc start PostgreSQL
+```
+
+`~` はscoopがインストールされている適当なパスであるため、適宜読み替えが必要である。
+
+起動が成功したので次は接続する。
+
+```
+$ psql -U postgres
+psql (16.3)
+"help"でヘルプを表示します。
+
+postgres=# SELECT 1;
+ ?column?
+----------
+        1
+(1 行)
+```
+
+ミック本ではセキュリティのために `listen_addresses` の設定値を `localhost` に書き換える作業を行っているが、最新版のPostgresSQLでは最初から `localhost` になっており作業不要だった。
+
+DBの作成を行う。店データベース `shop` を作成する。
+
+```sql
+postgres=# CREATE DATABASE shop;
+CREATE DATABASE
+```
+
+終了は `\q` で行うらしい。作成した `shop` データベースに接続するには以下のようにする。
+
+
+```bash
+$ psql -U postgres -d shop
+```
+
+あとは好きなようにSQLを書くことができる。SQLが書きたい時にSQLが書けるようになった。
