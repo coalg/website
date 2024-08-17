@@ -4,7 +4,7 @@ export const headerData = {
   links: [
     {
       text: 'About',
-      href: 'about',
+      href: '/about',
     },
     {
       text: 'Blog',
@@ -19,7 +19,7 @@ export const footerData = {
     {
       title: 'Links',
       links: [
-        { text: 'About', href: 'about' },
+        { text: 'About', href: '/about' },
         { text: 'Blog', href: getBlogPermalink() },
       ],
     },
