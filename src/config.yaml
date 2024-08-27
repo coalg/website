@@ -16,7 +16,7 @@ metadata:
     index: true
     follow: true
   openGraph:
-    site_name: Blog of Ladder
+    site_name: Ladder of the Blog
     images:
       - url: '~/assets/images/default.png'
         width: 1200
